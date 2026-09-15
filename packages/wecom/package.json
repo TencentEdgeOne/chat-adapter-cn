@@ -22,7 +22,7 @@
     "chat": "^4.39.0"
   },
   "dependencies": {
-    "chat-adapter-cn-shared": "workspace:^"
+    "chat-adapter-cn-shared": "^0.1.0"
   },
   "devDependencies": {
     "chat": "^4.39.0",
