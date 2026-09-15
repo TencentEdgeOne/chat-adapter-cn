@@ -5,6 +5,28 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 0.1.2). Leave empty to use each package.json.'
+        required: false
+        type: string
+        default: ''
+      shared:
+        description: '@edgeone/chat-adapter-cn-shared'
+        type: boolean
+        default: true
+      feishu:
+        description: '@edgeone/chat-adapter-feishu'
+        type: boolean
+        default: true
+      wecom:
+        description: '@edgeone/chat-adapter-wecom'
+        type: boolean
+        default: true
+      dingtalk:
+        description: '@edgeone/chat-adapter-dingtalk'
+        type: boolean
+        default: true
 
 permissions:
   id-token: write
@@ -22,34 +44,96 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          # Official npm trusted-publishing guide: do not cache release builds.
           package-manager-cache: false
 
-      - name: Use npm with OIDC trusted publishing
-        run: npm install -g npm@latest
+      # npm 12 needs a newer Node than many runners pin; 11.5.1+ is enough for OIDC.
+      - name: Use npm 11 for OIDC trusted publishing
+        run: npm install -g npm@11
+
+      - name: Resolve publish version
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          version=""
+          if [[ -n "${INPUT_VERSION:-}" ]]; then
+            version="$INPUT_VERSION"
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          if [[ -n "$version" && ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $version"
+            exit 1
+          fi
+          echo "PUBLISH_VERSION=$version" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ -n "$version" ]]; then
+            echo "Publishing selected packages as $version"
+          else
+            echo "Publishing each selected package at its package.json version"
+          fi
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm build
 
-      # npm OIDC authenticates only during `npm publish`. Publish shared first
-      # so the three adapters can resolve `@edgeone/chat-adapter-cn-shared@^0.1.0`.
-      # Skip versions that are already on the registry so a re-run is idempotent.
-      - name: Publish packages
+      - name: Publish plan
+        env:
+          WANT_SHARED: ${{ github.event_name != 'workflow_dispatch' || inputs.shared }}
+          WANT_FEISHU: ${{ github.event_name != 'workflow_dispatch' || inputs.feishu }}
+          WANT_WECOM: ${{ github.event_name != 'workflow_dispatch' || inputs.wecom }}
+          WANT_DINGTALK: ${{ github.event_name != 'workflow_dispatch' || inputs.dingtalk }}
         run: |
           set -euo pipefail
-          publish() {
-            local name version
-            name="$(node -p "require('./package.json').name")"
-            version="$(node -p "require('./package.json').version")"
-            if npm view "$name@$version" version >/dev/null 2>&1; then
-              echo "skip $name@$version (already on npm)"
-              return
-            fi
-            echo "publish $name@$version"
-            npm publish --access public
-          }
-          (cd packages/shared && publish)
-          (cd packages/feishu && publish)
-          (cd packages/wecom && publish)
-          (cd packages/dingtalk && publish)
+          echo "### Publish plan" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- override version: \`${PUBLISH_VERSION:-<(package.json)>}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Package | Step |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| \`@edgeone/chat-adapter-cn-shared\` | ${WANT_SHARED} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| \`@edgeone/chat-adapter-feishu\` | ${WANT_FEISHU} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| \`@edgeone/chat-adapter-wecom\` | ${WANT_WECOM} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| \`@edgeone/chat-adapter-dingtalk\` | ${WANT_DINGTALK} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Package | Version | Result | Previous latest |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          : > "$GITHUB_WORKSPACE/publish-results.txt"
+
+      - name: Publish @edgeone/chat-adapter-cn-shared
+        if: github.event_name != 'workflow_dispatch' || inputs.shared
+        continue-on-error: true
+        run: bash .github/scripts/publish-package.sh packages/shared
+
+      - name: Publish @edgeone/chat-adapter-feishu
+        if: github.event_name != 'workflow_dispatch' || inputs.feishu
+        continue-on-error: true
+        run: bash .github/scripts/publish-package.sh packages/feishu
+
+      - name: Publish @edgeone/chat-adapter-wecom
+        if: github.event_name != 'workflow_dispatch' || inputs.wecom
+        continue-on-error: true
+        run: bash .github/scripts/publish-package.sh packages/wecom
+
+      - name: Publish @edgeone/chat-adapter-dingtalk
+        if: github.event_name != 'workflow_dispatch' || inputs.dingtalk
+        continue-on-error: true
+        run: bash .github/scripts/publish-package.sh packages/dingtalk
+
+      - name: Publish outcome
+        if: always()
+        run: |
+          set -euo pipefail
+          echo
+          echo "==== publish results ===="
+          if [[ -f "$GITHUB_WORKSPACE/publish-results.txt" ]]; then
+            column -t -s $'\t' "$GITHUB_WORKSPACE/publish-results.txt" || cat "$GITHUB_WORKSPACE/publish-results.txt"
+          fi
+          if grep -q $'\tfailed$' "$GITHUB_WORKSPACE/publish-results.txt"; then
+            echo "One or more packages failed to publish."
+            exit 1
+          fi
+          echo "All selected packages published or were already on npm."

@@ -83,7 +83,14 @@ npm cannot attach a Trusted Publisher until the package name exists. Publish `0.
 - Environment: leave empty
 - Allowed action: `npm publish`
 
-Later releases: push a `v*` tag or run **Actions → Publish**. The workflow publishes `@edgeone/chat-adapter-cn-shared` first, then the three adapters, and skips versions already on the registry.
+Later releases: push a `v*` tag or run **Actions → Publish**.
+
+Manual run inputs:
+
+- **version** — optional. Sets every selected package to that semver before `npm publish`. Empty keeps each `package.json` version. A `v*` tag (for example `v0.1.2`) is the same as setting `0.1.2`.
+- **shared / feishu / wecom / dingtalk** — which packages to publish (all on by default).
+
+Each package is its own step. The job summary lists name, version, skip / published / failed, and the previous npm latest. Already-published versions are skipped. The job fails only if a selected package's publish fails.
 
 ## License
 
