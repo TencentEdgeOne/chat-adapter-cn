@@ -34,3 +34,21 @@ pnpm install
 pnpm test
 pnpm build
 ```
+
+## Publishing
+
+Publish `chat-adapter-cn-shared` first, then the three adapters:
+
+```bash
+pnpm --filter chat-adapter-cn-shared publish --access public
+pnpm --filter chat-adapter-feishu publish --access public
+pnpm --filter chat-adapter-wecom publish --access public
+pnpm --filter chat-adapter-dingtalk publish --access public
+```
+
+After they are on npm, switch the bot from `file:` paths to registry versions:
+
+```bash
+npm uninstall chat-adapter-cn-shared chat-adapter-feishu chat-adapter-wecom chat-adapter-dingtalk
+npm install chat-adapter-feishu chat-adapter-wecom chat-adapter-dingtalk
+```
