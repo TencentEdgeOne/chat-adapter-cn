@@ -1,9 +1,9 @@
-# chat-adapter-feishu
+# @edgeone/chat-adapter-feishu
 
 [Feishu / Lark](https://open.feishu.cn) adapter for [Chat SDK](https://chat-sdk.dev).
 
 ```ts
-import { createFeishuAdapter } from 'chat-adapter-feishu';
+import { createFeishuAdapter } from '@edgeone/chat-adapter-feishu';
 
 const adapter = createFeishuAdapter({
   appId,

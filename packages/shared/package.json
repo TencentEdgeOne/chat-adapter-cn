@@ -1,5 +1,5 @@
 {
-  "name": "chat-adapter-cn-shared",
+  "name": "@edgeone/chat-adapter-cn-shared",
   "version": "0.1.0",
   "description": "Shared floor for community Chat SDK adapters (Feishu, WeCom, DingTalk)",
   "type": "module",

@@ -1,9 +1,9 @@
-# chat-adapter-dingtalk
+# @edgeone/chat-adapter-dingtalk
 
 [DingTalk](https://open.dingtalk.com) internal-app robot adapter for [Chat SDK](https://chat-sdk.dev).
 
 ```ts
-import { createDingtalkAdapter } from 'chat-adapter-dingtalk';
+import { createDingtalkAdapter } from '@edgeone/chat-adapter-dingtalk';
 
 const adapter = createDingtalkAdapter({
   appKey,

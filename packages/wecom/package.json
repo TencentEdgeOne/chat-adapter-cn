@@ -1,5 +1,5 @@
 {
-  "name": "chat-adapter-wecom",
+  "name": "@edgeone/chat-adapter-wecom",
   "version": "0.1.0",
   "description": "WeCom adapter for Chat SDK",
   "type": "module",
@@ -22,7 +22,7 @@
     "chat": "^4.39.0"
   },
   "dependencies": {
-    "chat-adapter-cn-shared": "^0.1.0"
+    "@edgeone/chat-adapter-cn-shared": "workspace:^"
   },
   "devDependencies": {
     "chat": "^4.39.0",

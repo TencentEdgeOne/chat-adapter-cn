@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm --filter chat-adapter-cn-shared build && pnpm -r test",
+    "test": "pnpm --filter @edgeone/chat-adapter-cn-shared build && pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {

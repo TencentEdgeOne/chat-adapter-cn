@@ -7,7 +7,7 @@ import {
   plainFormatted,
   postJson,
   postableText,
-} from 'chat-adapter-cn-shared';
+} from '@edgeone/chat-adapter-cn-shared';
 import type { DingtalkAdapterConfig, DingtalkKind, DingtalkRawMessage, DingtalkThreadId } from './types';
 
 export type {

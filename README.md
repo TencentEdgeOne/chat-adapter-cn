@@ -1,17 +1,17 @@
 # chat-adapter-cn
 
-Community [Chat SDK](https://chat-sdk.dev) adapters for Feishu, WeCom, and DingTalk. The `@chat-adapter/*` npm scope is reserved for Vercel; these packages follow the community `chat-adapter-<platform>` naming.
+Community [Chat SDK](https://chat-sdk.dev) adapters for Feishu, WeCom, and DingTalk. The `@chat-adapter/*` npm scope is reserved for Vercel; these packages live under `@edgeone`.
 
 | Package | Platform |
 | --- | --- |
-| [`chat-adapter-feishu`](packages/feishu) | Feishu / Lark |
-| [`chat-adapter-wecom`](packages/wecom) | WeCom (self-built app, 1:1) |
-| [`chat-adapter-dingtalk`](packages/dingtalk) | DingTalk internal-app robot |
-| [`chat-adapter-cn-shared`](packages/shared) | Shared floor used by the three adapters |
+| [`@edgeone/chat-adapter-feishu`](packages/feishu) | Feishu / Lark |
+| [`@edgeone/chat-adapter-wecom`](packages/wecom) | WeCom (self-built app, 1:1) |
+| [`@edgeone/chat-adapter-dingtalk`](packages/dingtalk) | DingTalk internal-app robot |
+| [`@edgeone/chat-adapter-cn-shared`](packages/shared) | Shared floor used by the three adapters |
 
 ```ts
 import { Chat } from 'chat';
-import { createFeishuAdapter } from 'chat-adapter-feishu';
+import { createFeishuAdapter } from '@edgeone/chat-adapter-feishu';
 
 const chat = new Chat({
   userName: 'assistant',
@@ -48,7 +48,7 @@ CI publishes via npm [trusted publishing](https://docs.npmjs.com/trusted-publish
    - Allowed action: `npm publish`
 3. Push a `v*` tag or run **Actions → Publish → Run workflow**.
 
-The workflow builds, tests, then `npm publish`es `chat-adapter-cn-shared` first and the three adapters after. Already-published versions are skipped.
+The workflow builds, tests, then `npm publish`es `@edgeone/chat-adapter-cn-shared` first and the three adapters after. Already-published versions are skipped.
 
 ```bash
 git tag v0.1.0
@@ -58,6 +58,6 @@ git push origin v0.1.0
 After they are on npm, switch the bot from `file:` paths to registry versions:
 
 ```bash
-npm uninstall chat-adapter-cn-shared chat-adapter-feishu chat-adapter-wecom chat-adapter-dingtalk
-npm install chat-adapter-feishu chat-adapter-wecom chat-adapter-dingtalk
+npm uninstall @edgeone/chat-adapter-cn-shared @edgeone/chat-adapter-feishu @edgeone/chat-adapter-wecom @edgeone/chat-adapter-dingtalk
+npm install @edgeone/chat-adapter-feishu @edgeone/chat-adapter-wecom @edgeone/chat-adapter-dingtalk
 ```

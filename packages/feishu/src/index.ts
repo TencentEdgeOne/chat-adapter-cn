@@ -7,7 +7,7 @@ import {
   plainFormatted,
   postJson,
   postableText,
-} from 'chat-adapter-cn-shared';
+} from '@edgeone/chat-adapter-cn-shared';
 import type { FeishuAdapterConfig, FeishuEvent, FeishuRawMessage, FeishuThreadId } from './types';
 
 export type { FeishuAdapterConfig, FeishuEvent, FeishuRawMessage, FeishuThreadId } from './types';

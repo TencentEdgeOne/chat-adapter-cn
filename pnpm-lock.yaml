@@ -23,7 +23,7 @@ importers:
 
   packages/dingtalk:
     dependencies:
-      chat-adapter-cn-shared:
+      '@edgeone/chat-adapter-cn-shared':
         specifier: workspace:^
         version: link:../shared
     devDependencies:
@@ -42,7 +42,7 @@ importers:
 
   packages/feishu:
     dependencies:
-      chat-adapter-cn-shared:
+      '@edgeone/chat-adapter-cn-shared':
         specifier: workspace:^
         version: link:../shared
     devDependencies:
@@ -76,7 +76,7 @@ importers:
 
   packages/wecom:
     dependencies:
-      chat-adapter-cn-shared:
+      '@edgeone/chat-adapter-cn-shared':
         specifier: workspace:^
         version: link:../shared
     devDependencies:

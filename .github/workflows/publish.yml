@@ -33,7 +33,7 @@ jobs:
       - run: pnpm build
 
       # npm OIDC authenticates only during `npm publish`. Publish shared first
-      # so the three adapters can resolve `chat-adapter-cn-shared@^0.1.0`.
+      # so the three adapters can resolve `@edgeone/chat-adapter-cn-shared@^0.1.0`.
       # Skip versions that are already on the registry so a re-run is idempotent.
       - name: Publish packages
         run: |
