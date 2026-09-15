@@ -155,6 +155,12 @@ export class FeishuAdapter extends MinimalChatAdapter<FeishuThreadId, FeishuRawM
 
   async handleWebhook(request: Request, options?: WebhookOptions): Promise<Response> {
     const rawBody = await request.text();
+    // URL verification has no X-Lark-Signature. Answer it before HMAC so a
+    // console "save request URL" does not get a plain-text 401.
+    const verified = verifyFeishuUrl(rawBody, this.config.encryptKey);
+    if (verified) {
+      return Response.json({ challenge: verified.challenge });
+    }
     if (!this.verifySignature(request, rawBody)) {
       return new Response('unauthorized', { status: 401 });
     }
@@ -162,9 +168,6 @@ export class FeishuAdapter extends MinimalChatAdapter<FeishuThreadId, FeishuRawM
     const token = event.header?.token ?? event.token;
     if (token && token !== this.config.verificationToken) {
       return new Response('unauthorized', { status: 401 });
-    }
-    if (event.type === 'url_verification' && event.challenge) {
-      return Response.json({ challenge: event.challenge });
     }
 
     const headerType = event.header?.event_type;
