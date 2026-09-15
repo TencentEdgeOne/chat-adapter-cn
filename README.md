@@ -37,13 +37,22 @@ pnpm build
 
 ## Publishing
 
-Publish `chat-adapter-cn-shared` first, then the three adapters:
+CI publishes via npm [trusted publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC). There is no `NPM_TOKEN`.
+
+1. Publish each package once from your machine so the name exists on npm (`npm` has no pending publisher for a first version).
+2. On each package page → **Settings → Trusted Publisher → GitHub Actions**:
+   - Organization or user: `bleembleem`
+   - Repository: `chat-adapter-cn`
+   - Workflow filename: `publish.yml`
+   - Environment: leave empty
+   - Allowed action: `npm publish`
+3. Push a `v*` tag or run **Actions → Publish → Run workflow**.
+
+The workflow builds, tests, then `npm publish`es `chat-adapter-cn-shared` first and the three adapters after. Already-published versions are skipped.
 
 ```bash
-pnpm --filter chat-adapter-cn-shared publish --access public
-pnpm --filter chat-adapter-feishu publish --access public
-pnpm --filter chat-adapter-wecom publish --access public
-pnpm --filter chat-adapter-dingtalk publish --access public
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
 After they are on npm, switch the bot from `file:` paths to registry versions:
