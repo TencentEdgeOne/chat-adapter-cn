@@ -1,0 +1,17 @@
+{
+  "name": "chat-adapter-cn",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm --filter chat-adapter-cn-shared build && pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
+  },
+  "packageManager": "pnpm@10.30.3"
+}
