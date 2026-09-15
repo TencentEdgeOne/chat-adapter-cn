@@ -1,6 +1,6 @@
 {
   "name": "@edgeone/chat-adapter-feishu",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Feishu / Lark adapter for Chat SDK",
   "type": "module",
   "main": "./dist/index.js",
@@ -22,7 +22,7 @@
     "chat": "^4.39.0"
   },
   "dependencies": {
-    "@edgeone/chat-adapter-cn-shared": "^0.1.0"
+    "@edgeone/chat-adapter-cn-shared": "^0.1.2"
   },
   "devDependencies": {
     "chat": "^4.39.0",
