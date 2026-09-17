@@ -77,7 +77,7 @@ CI uses npm [trusted publishing](https://docs.npmjs.com/trusted-publishers/) (OI
 
 npm cannot attach a Trusted Publisher until the package name exists. Publish `0.1.0` once from a logged-in machine, then on each package page go to **Settings → Trusted Publisher → GitHub Actions**:
 
-- Organization or user: `bleembleem`
+- Organization or user: `TencentEdgeOne`
 - Repository: `chat-adapter-cn`
 - Workflow filename: `publish.yml`
 - Environment: leave empty

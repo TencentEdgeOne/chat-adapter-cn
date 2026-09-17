@@ -29,12 +29,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bleembleem/chat-adapter-cn.git",
+    "url": "git+https://github.com/TencentEdgeOne/chat-adapter-cn.git",
     "directory": "packages/shared"
   },
-  "homepage": "https://github.com/bleembleem/chat-adapter-cn/tree/main/packages/shared",
+  "homepage": "https://github.com/TencentEdgeOne/chat-adapter-cn/tree/main/packages/shared",
   "bugs": {
-    "url": "https://github.com/bleembleem/chat-adapter-cn/issues"
+    "url": "https://github.com/TencentEdgeOne/chat-adapter-cn/issues"
   },
   "publishConfig": {
     "access": "public"

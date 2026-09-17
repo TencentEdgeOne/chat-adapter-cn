@@ -32,12 +32,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bleembleem/chat-adapter-cn.git",
+    "url": "git+https://github.com/TencentEdgeOne/chat-adapter-cn.git",
     "directory": "packages/dingtalk"
   },
-  "homepage": "https://github.com/bleembleem/chat-adapter-cn/tree/main/packages/dingtalk",
+  "homepage": "https://github.com/TencentEdgeOne/chat-adapter-cn/tree/main/packages/dingtalk",
   "bugs": {
-    "url": "https://github.com/bleembleem/chat-adapter-cn/issues"
+    "url": "https://github.com/TencentEdgeOne/chat-adapter-cn/issues"
   },
   "publishConfig": {
     "access": "public"
