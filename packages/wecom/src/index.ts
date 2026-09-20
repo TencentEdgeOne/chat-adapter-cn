@@ -24,8 +24,21 @@ export type {
   WecomUrlVerification,
 } from './types';
 
+/** Public Function URL. The `.in.` host is intranet-only and 435s from Makers. */
 export const DEFAULT_WECOM_PROXY_URL =
-  'https://1256816668-gzwfxjk50f.in.ap-singapore.tencentscf.com';
+  'https://1256816668-gzwfxjk50f.ap-singapore.tencentscf.com';
+
+export function resolveWecomProxyUrl(value?: string): string {
+  const raw = (value ?? DEFAULT_WECOM_PROXY_URL).trim() || DEFAULT_WECOM_PROXY_URL;
+  try {
+    const url = new URL(raw);
+    url.hostname = url.hostname.replace(/\.in\.(?=[a-z0-9-]+\.tencentscf\.com$)/i, '.');
+    if (url.pathname === '/') url.pathname = '';
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return DEFAULT_WECOM_PROXY_URL;
+  }
+}
 
 export function xmlTag(xml: string, tag: string): string {
   const cdata = xml.match(new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`));
@@ -85,9 +98,11 @@ export function verifyWecomUrl(input: WecomUrlVerification): string {
 
 export class WecomAdapter extends MinimalChatAdapter<WecomThreadId, WecomRawMessage> {
   readonly name = 'wecom';
+  private readonly proxyUrl: string;
 
   constructor(private readonly config: WecomAdapterConfig) {
     super();
+    this.proxyUrl = resolveWecomProxyUrl(config.proxyUrl);
   }
 
   encodeThreadId(platformData: WecomThreadId): string {
@@ -144,15 +159,15 @@ export class WecomAdapter extends MinimalChatAdapter<WecomThreadId, WecomRawMess
       query: { access_token: token },
       body: {
         touser: userId,
-        msgtype: 'markdown',
+        msgtype: 'text',
         agentid: Number(this.config.agentId) || this.config.agentId,
-        markdown: { content: text },
+        text: { content: text },
       },
     });
     return {
       id: `${userId}:${Date.now()}`,
       threadId,
-      raw: { FromUserName: userId, MsgId: '', MsgType: 'markdown', Content: text },
+      raw: { FromUserName: userId, MsgId: '', MsgType: 'text', Content: text },
     };
   }
 
@@ -200,7 +215,7 @@ export class WecomAdapter extends MinimalChatAdapter<WecomThreadId, WecomRawMess
   }
 
   private wecomApi<T>(path: string, request: Omit<WecomProxyRequest, 'path'>): Promise<T> {
-    return postJson<T>(DEFAULT_WECOM_PROXY_URL, {
+    return postJson<T>(this.proxyUrl, {
       method: 'POST',
       body: JSON.stringify({ path, ...request }),
     });

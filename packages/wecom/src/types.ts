@@ -4,6 +4,12 @@ export type WecomAdapterConfig = {
   appSecret: string;
   token: string;
   encodingAesKey: string;
+  /**
+   * Public SCF Function URL. WeCom token + send always go through this proxy
+   * (fixed egress IP / 企业可信IP). Intranet `*.in.<region>.tencentscf.com`
+   * hosts are rewritten to the public host. Direct qyapi calls are not used.
+   */
+  proxyUrl?: string;
 };
 
 /** Envelope the adapter POSTs to the SCF proxy. */

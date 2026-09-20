@@ -2,7 +2,7 @@
 
 [WeCom](https://developer.work.weixin.qq.com) (WeChat Work) adapter for [Chat SDK](https://chat-sdk.dev).
 
-Built for a **self-built app in 1:1 chat**. Verifies `msg_signature`, decrypts XML callbacks, and replies with markdown through `message/send`.
+Built for a **self-built app in 1:1 chat**. Verifies `msg_signature`, decrypts XML callbacks, and replies through a fixed-IP SCF proxy (`gettoken` + `message/send` as text). Callers do not talk to `qyapi.weixin.qq.com` directly.
 
 ## Install
 
@@ -44,8 +44,9 @@ Use one URL for both steps: **GET** is URL verification (`echostr`); **POST** is
 | `appSecret` | `string` | App Secret |
 | `token` | `string` | Token from Receive messages |
 | `encodingAesKey` | `string` | 43-character EncodingAESKey |
+| `proxyUrl` | `string` | Optional. Public SCF Function URL. Defaults to the built-in proxy. Intranet `*.in.<region>.tencentscf.com` is rewritten to the public host. |
 
-All five fields are required. Config is camelCase; do not pass `WECOM_*` environment variable names into the package.
+The first five fields are required. `gettoken` and `message/send` always go through `proxyUrl`. Config is camelCase; do not pass `WECOM_*` environment variable names into the package.
 
 ## Thread IDs
 
@@ -82,7 +83,7 @@ Decrypt uses PKCS7 unpadding by hand (`setAutoPadding(false)`). Node auto-paddin
 
 `handleWebhook` reads `Encrypt` from the XML body, checks `msg_signature`, decrypts with `encodingAesKey` / `corpId`, and processes `MsgType=text`. Other types are acknowledged with `200`.
 
-`postMessage` sends `msgtype: markdown` to `cgi-bin/message/send`.
+`postMessage` sends `msgtype: text` to `cgi-bin/message/send` via the proxy. WeCom's markdown client renders unsupported syntax as「同上。」
 
 ## Exports
 
@@ -97,6 +98,7 @@ Decrypt uses PKCS7 unpadding by hand (`setAutoPadding(false)`). Node auto-paddin
 | `wecomDecrypt` | AES-256-CBC decrypt + receive-id check |
 | `xmlTag` | Read a tag from XML (`CDATA` or plain) |
 | `verifyWecomUrl` | GET `echostr` → plaintext |
+| `DEFAULT_WECOM_PROXY_URL` / `resolveWecomProxyUrl` | Built-in public proxy URL |
 
 ## Limitations
 

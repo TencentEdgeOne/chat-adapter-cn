@@ -1,6 +1,6 @@
 {
   "name": "@edgeone/chat-adapter-wecom",
-  "version": "0.1.3",
+  "version": "0.1.6",
   "description": "WeCom adapter for Chat SDK",
   "type": "module",
   "main": "./dist/index.js",

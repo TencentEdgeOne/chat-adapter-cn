@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_WECOM_PROXY_URL,
   createWecomAdapter,
+  resolveWecomProxyUrl,
   verifyWecomUrl,
   wecomDecrypt,
   wecomSignature,
@@ -118,10 +119,20 @@ describe('createWecomAdapter', () => {
       query: { access_token: 'tok' },
       body: {
         touser: 'alice',
-        msgtype: 'markdown',
+        msgtype: 'text',
         agentid: 1000002,
-        markdown: { content: 'hello' },
+        text: { content: 'hello' },
       },
     });
+    expect(fetchMock.mock.calls.every(([url]) => !String(url).includes('qyapi.weixin.qq.com'))).toBe(
+      true,
+    );
+  });
+
+  it('rewrites an intranet Function URL to the public host', () => {
+    expect(
+      resolveWecomProxyUrl('https://1256816668-gzwfxjk50f.in.ap-singapore.tencentscf.com'),
+    ).toBe(DEFAULT_WECOM_PROXY_URL);
+    expect(DEFAULT_WECOM_PROXY_URL).not.toContain('.in.');
   });
 });
