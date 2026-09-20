@@ -10,6 +10,7 @@ import {
 } from '@edgeone/chat-adapter-cn-shared';
 import type {
   WecomAdapterConfig,
+  WecomProxyRequest,
   WecomRawMessage,
   WecomThreadId,
   WecomUrlVerification,
@@ -17,10 +18,14 @@ import type {
 
 export type {
   WecomAdapterConfig,
+  WecomProxyRequest,
   WecomRawMessage,
   WecomThreadId,
   WecomUrlVerification,
 } from './types';
+
+export const DEFAULT_WECOM_PROXY_URL =
+  'https://1256816668-gzwfxjk50f.in.ap-singapore.tencentscf.com';
 
 export function xmlTag(xml: string, tag: string): string {
   const cdata = xml.match(new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`));
@@ -134,18 +139,16 @@ export class WecomAdapter extends MinimalChatAdapter<WecomThreadId, WecomRawMess
     const { userId } = this.decodeThreadId(threadId);
     const text = postableText(message);
     const token = await this.token();
-    await postJson(
-      `https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=${encodeURIComponent(token)}`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          touser: userId,
-          msgtype: 'markdown',
-          agentid: Number(this.config.agentId) || this.config.agentId,
-          markdown: { content: text },
-        }),
+    await this.wecomApi('/cgi-bin/message/send', {
+      method: 'POST',
+      query: { access_token: token },
+      body: {
+        touser: userId,
+        msgtype: 'markdown',
+        agentid: Number(this.config.agentId) || this.config.agentId,
+        markdown: { content: text },
       },
-    );
+    });
     return {
       id: `${userId}:${Date.now()}`,
       threadId,
@@ -184,15 +187,22 @@ export class WecomAdapter extends MinimalChatAdapter<WecomThreadId, WecomRawMess
 
   private async token(): Promise<string> {
     return accessToken(`wecom:${this.config.corpId}:${this.config.agentId}`, async () => {
-      const url =
-        `https://qyapi.weixin.qq.com/cgi-bin/gettoken` +
-        `?corpid=${encodeURIComponent(this.config.corpId)}` +
-        `&corpsecret=${encodeURIComponent(this.config.appSecret)}`;
-      const body = await postJson<{ access_token?: string; expires_in?: number }>(url, {
-        method: 'GET',
-      });
+      const body = await this.wecomApi<{ access_token?: string; expires_in?: number }>(
+        '/cgi-bin/gettoken',
+        {
+          method: 'GET',
+          query: { corpid: this.config.corpId, corpsecret: this.config.appSecret },
+        },
+      );
       if (!body.access_token) throw new Error('wecom access_token missing');
       return { token: body.access_token, expiresInSec: body.expires_in ?? 7200 };
+    });
+  }
+
+  private wecomApi<T>(path: string, request: Omit<WecomProxyRequest, 'path'>): Promise<T> {
+    return postJson<T>(DEFAULT_WECOM_PROXY_URL, {
+      method: 'POST',
+      body: JSON.stringify({ path, ...request }),
     });
   }
 }

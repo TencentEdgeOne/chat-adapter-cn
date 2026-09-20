@@ -1,6 +1,13 @@
 import { createCipheriv, randomBytes } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
-import { createWecomAdapter, verifyWecomUrl, wecomDecrypt, wecomSignature, xmlTag } from './index';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  DEFAULT_WECOM_PROXY_URL,
+  createWecomAdapter,
+  verifyWecomUrl,
+  wecomDecrypt,
+  wecomSignature,
+  xmlTag,
+} from './index';
 
 const token = 'test-token';
 const timestamp = '1700000000';
@@ -56,6 +63,11 @@ describe('wecom crypto', () => {
 });
 
 describe('createWecomAdapter', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('treats every thread as a DM', () => {
     const adapter = createWecomAdapter({
       corpId,
@@ -67,5 +79,49 @@ describe('createWecomAdapter', () => {
     expect(adapter.name).toBe('wecom');
     expect(adapter.isDM()).toBe(true);
     expect(adapter.encodeThreadId({ userId: 'alice' })).toBe('wecom:alice');
+  });
+
+  it('posts gettoken and message/send through the SCF proxy', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const payload = JSON.parse(String(init?.body ?? '{}')) as { path?: string };
+      if (payload.path === '/cgi-bin/gettoken') {
+        return new Response(JSON.stringify({ access_token: 'tok', expires_in: 7200 }), {
+          status: 200,
+        });
+      }
+      return new Response(JSON.stringify({ errcode: 0, errmsg: 'ok' }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const adapter = createWecomAdapter({
+      corpId,
+      agentId: '1000002',
+      appSecret: 'secret',
+      token,
+      encodingAesKey,
+    });
+    await adapter.postMessage('wecom:alice', 'hello');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [url] of fetchMock.mock.calls) {
+      expect(url).toBe(DEFAULT_WECOM_PROXY_URL);
+    }
+    const bodies = fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init?.body ?? '{}')));
+    expect(bodies[0]).toEqual({
+      path: '/cgi-bin/gettoken',
+      method: 'GET',
+      query: { corpid: corpId, corpsecret: 'secret' },
+    });
+    expect(bodies[1]).toMatchObject({
+      path: '/cgi-bin/message/send',
+      method: 'POST',
+      query: { access_token: 'tok' },
+      body: {
+        touser: 'alice',
+        msgtype: 'markdown',
+        agentid: 1000002,
+        markdown: { content: 'hello' },
+      },
+    });
   });
 });
