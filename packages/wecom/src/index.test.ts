@@ -4,6 +4,7 @@ import {
   DEFAULT_WECOM_PROXY_URL,
   createWecomAdapter,
   resolveWecomProxyUrl,
+  unwrapWecomProxyResponse,
   verifyWecomUrl,
   wecomDecrypt,
   wecomSignature,
@@ -134,5 +135,59 @@ describe('createWecomAdapter', () => {
       resolveWecomProxyUrl('https://1256816668-gzwfxjk50f.in.ap-singapore.tencentscf.com'),
     ).toBe(DEFAULT_WECOM_PROXY_URL);
     expect(DEFAULT_WECOM_PROXY_URL).not.toContain('.in.');
+  });
+
+  it('unwraps an API Gateway / Function URL envelope', () => {
+    expect(
+      unwrapWecomProxyResponse({
+        isBase64Encoded: false,
+        statusCode: 200,
+        body: JSON.stringify({ access_token: 'tok', expires_in: 7200 }),
+      }),
+    ).toEqual({ access_token: 'tok', expires_in: 7200 });
+  });
+
+  it('rejects a Function URL echo of the adapter request', () => {
+    expect(() =>
+      unwrapWecomProxyResponse({
+        httpMethod: 'POST',
+        path: '/',
+        requestContext: { sourceIp: '1.1.1.1' },
+        body: JSON.stringify({
+          path: '/cgi-bin/gettoken',
+          method: 'GET',
+          query: { corpid: 'x', corpsecret: 'x' },
+        }),
+      }),
+    ).toThrow(/echoed the Function URL event/);
+  });
+
+  it('surfaces a Function URL echo instead of access_token missing', async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          httpMethod: 'POST',
+          path: '/',
+          requestContext: { sourceIp: '1.1.1.1' },
+          body: JSON.stringify({
+            path: '/cgi-bin/gettoken',
+            method: 'GET',
+            query: { corpid: corpId, corpsecret: 'secret' },
+          }),
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = createWecomAdapter({
+      corpId,
+      agentId: '1000002',
+      appSecret: 'secret',
+      token,
+      encodingAesKey,
+    });
+    await expect(adapter.postMessage('wecom:alice', 'hello')).rejects.toThrow(
+      /echoed the Function URL event/,
+    );
   });
 });

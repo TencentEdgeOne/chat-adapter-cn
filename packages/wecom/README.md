@@ -48,6 +48,12 @@ Use one URL for both steps: **GET** is URL verification (`echostr`); **POST** is
 
 The first five fields are required. `gettoken` and `message/send` always go through `proxyUrl`. Config is camelCase; do not pass `WECOM_*` environment variable names into the package.
 
+## SCF proxy
+
+Upload `src/proxy.cjs` as the Function URL **event function** (Node.js 18+, CommonJS). Handler: `index.main_handler`. `src/proxy.mjs` (`export const main_handler`) does not bind on the default CJS runtime; the URL then echoes the request and callers see HTTP 200 without `access_token`.
+
+A working proxy returns WeCom JSON (`access_token` / `errcode`). An echo looks like `{ httpMethod, body, requestContext }`.
+
 ## Thread IDs
 
 Every conversation is a DM:
@@ -99,6 +105,7 @@ Decrypt uses PKCS7 unpadding by hand (`setAutoPadding(false)`). Node auto-paddin
 | `xmlTag` | Read a tag from XML (`CDATA` or plain) |
 | `verifyWecomUrl` | GET `echostr` → plaintext |
 | `DEFAULT_WECOM_PROXY_URL` / `resolveWecomProxyUrl` | Built-in public proxy URL |
+| `unwrapWecomProxyResponse` | Unwrap Function URL / API Gateway envelopes |
 
 ## Limitations
 

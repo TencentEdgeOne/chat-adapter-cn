@@ -40,6 +40,55 @@ export function resolveWecomProxyUrl(value?: string): string {
   }
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function parseJsonRecord(text: string): Record<string, unknown> | null {
+  try {
+    return asRecord(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Function URL may return the WeCom JSON, an API Gateway envelope
+ * `{ statusCode, body }`, or the request event itself (default echo handler).
+ */
+export function unwrapWecomProxyResponse(raw: unknown): Record<string, unknown> {
+  const top = asRecord(raw) ?? {};
+  const nested = typeof top.body === 'string' ? parseJsonRecord(top.body) : asRecord(top.body);
+  const candidate = nested ?? top;
+  if (typeof candidate.path === 'string' && candidate.path.startsWith('/cgi-bin/')) {
+    throw new Error(
+      'wecom proxy echoed the Function URL event instead of calling qyapi. ' +
+        'Deploy src/proxy.cjs as the SCF handler (exports.main_handler).',
+    );
+  }
+  if (
+    typeof top.httpMethod === 'string' &&
+    top.requestContext != null &&
+    !('access_token' in candidate) &&
+    !('errcode' in candidate)
+  ) {
+    throw new Error(
+      'wecom proxy returned a Function URL event envelope. ' +
+        'Deploy src/proxy.cjs as the SCF handler (exports.main_handler).',
+    );
+  }
+  return candidate;
+}
+
+function assertWecomApiBody<T>(body: Record<string, unknown>, path: string): T {
+  if (typeof body.errcode === 'number' && body.errcode !== 0) {
+    throw new Error(`wecom ${path} failed errcode=${body.errcode} ${String(body.errmsg ?? '')}`.trim());
+  }
+  return body as T;
+}
+
 export function xmlTag(xml: string, tag: string): string {
   const cdata = xml.match(new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`));
   if (cdata?.[1] != null) return cdata[1];
@@ -209,16 +258,19 @@ export class WecomAdapter extends MinimalChatAdapter<WecomThreadId, WecomRawMess
           query: { corpid: this.config.corpId, corpsecret: this.config.appSecret },
         },
       );
-      if (!body.access_token) throw new Error('wecom access_token missing');
+      if (!body.access_token) {
+        throw new Error(`wecom access_token missing from ${JSON.stringify(body).slice(0, 200)}`);
+      }
       return { token: body.access_token, expiresInSec: body.expires_in ?? 7200 };
     });
   }
 
-  private wecomApi<T>(path: string, request: Omit<WecomProxyRequest, 'path'>): Promise<T> {
-    return postJson<T>(this.proxyUrl, {
+  private async wecomApi<T>(path: string, request: Omit<WecomProxyRequest, 'path'>): Promise<T> {
+    const raw = await postJson<unknown>(this.proxyUrl, {
       method: 'POST',
       body: JSON.stringify({ path, ...request }),
     });
+    return assertWecomApiBody<T>(unwrapWecomProxyResponse(raw), path);
   }
 }
 
